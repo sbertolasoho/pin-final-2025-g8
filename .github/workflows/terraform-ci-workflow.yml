@@ -1,0 +1,73 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches:
+      - feature/**
+      - bugfix/**
+      - hotfix/**
+
+env:
+  TERRAFORM_VERSION: 1.11.4
+
+jobs:
+  terraform-lint:
+    name: Terraform Lint and Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        
+      - name: TFLint
+        uses: terraform-linters/tflint-action@v3
+        with:
+          config_file: .tflint.hcl
+          args: --recursive
+          
+      - name: Install TFSec
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          
+      - name: Run TFSec
+        run: tfsec .
+        
+  terraform-test:
+    name: Terraform Test
+    needs: terraform-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          
+      - name: Setup TF Env
+        uses: hashicorp/setup-terraform-env@v1
+        
+      - name: Terraform Init
+        working-directory: environments/dev
+        run: terraform init -backend=false
+        
+      - name: Terraform Validate
+        working-directory: environments/dev
+        run: terraform validate
+        
+      # Opcional: Si tienes pruebas unitarias para tus módulos
+      - name: Run Terratest
+        if: false  # Desactivado por defecto, activa si tienes Terratest configurado
+        run: |
+          cd tests
+          go test -v ./...

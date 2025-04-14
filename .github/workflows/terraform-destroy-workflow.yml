@@ -1,0 +1,84 @@
+name: Terraform Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy (dev, stage, prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+      confirmation:
+        description: 'Type "destroy" to confirm deletion'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: us-east-1  # Cambia a tu región preferida
+  TERRAFORM_VERSION: 1.11.4
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    # Solo ejecuta si la confirmación es correcta
+    if: github.event.inputs.confirmation == 'destroy'
+    # Requiere aprobación manual para entornos críticos
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          
+      - name: Terraform Init
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: terraform init
+        
+      # Destruir en orden inverso al de despliegue
+      - name: Destroy remaining resources first
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: |
+          terraform destroy -target=module.nginx-app \
+                           -target=module.monitoring.kubernetes_manifest.nginx_service_monitor \
+                           -auto-approve
+        continue-on-error: true
+      
+      - name: Destroy monitoring
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: terraform destroy -target=module.monitoring -auto-approve
+        continue-on-error: true
+        
+      - name: Destroy EKS AWS Auth
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: terraform destroy -target=module.eks_aws_auth -auto-approve
+        continue-on-error: true
+        
+      - name: Destroy EKS Cluster
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: terraform destroy -target=module.eks -auto-approve
+        continue-on-error: true
+        
+      - name: Destroy VPC
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: terraform destroy -target=module.vpc -auto-approve
+        continue-on-error: true
+        
+      # Intento final para destruir todo
+      - name: Final cleanup
+        working-directory: environments/${{ github.event.inputs.environment }}
+        run: terraform destroy -auto-approve
