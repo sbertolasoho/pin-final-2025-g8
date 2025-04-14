@@ -11,11 +11,11 @@ module "vpc" {
 // Configurar el aws-auth para el acceso al clúster
 module "eks_aws_auth" {
   source = "../../modules/eks/aws-auth"
-  
+
   manage_aws_auth_configmap = true
   aws_auth_users = [
     {
-      userarn  = "arn:aws:iam::083904820942:user/sbertola"  # Reemplaza con tu ARN correcto
+      userarn  = "arn:aws:iam::083904820942:user/sbertola" # Reemplaza con tu ARN correcto
       username = "sbertola"
       groups   = ["system:masters"]
     }

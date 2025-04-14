@@ -37,7 +37,7 @@ resource "kubernetes_deployment" "nginx" {
             mount_path = "/etc/nginx/conf.d"
           }
         }
-        
+
         # Añadir el contenedor del exporter
         container {
           name  = "nginx-exporter"
@@ -48,7 +48,7 @@ resource "kubernetes_deployment" "nginx" {
             name           = "metrics"
           }
         }
-        
+
         # Volumen para configuración personalizada de NGINX
         volume {
           name = "nginx-conf"
@@ -103,7 +103,7 @@ resource "kubernetes_service" "nginx" {
   }
   spec {
     selector = {
-      app = "nginx"  # Simplificado para evitar referencias circulares
+      app = "nginx" # Simplificado para evitar referencias circulares
     }
     port {
       name        = "http"

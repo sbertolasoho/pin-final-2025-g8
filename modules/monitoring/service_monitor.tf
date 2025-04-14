@@ -40,7 +40,7 @@ resource "kubernetes_manifest" "nginx_service_monitor_default" {
     kind       = "ServiceMonitor"
     metadata = {
       name      = "nginx-monitor-default"
-      namespace = "monitoring"   # Se despliega en el namespace de Prometheus
+      namespace = "monitoring" # Se despliega en el namespace de Prometheus
       labels = {
         release = "kube-prometheus-stack"
       }
@@ -52,7 +52,7 @@ resource "kubernetes_manifest" "nginx_service_monitor_default" {
         }
       }
       namespaceSelector = {
-        matchNames = ["default"]   # Selecciona servicios en el namespace "default"
+        matchNames = ["default"] # Selecciona servicios en el namespace "default"
       }
       endpoints = [
         {
