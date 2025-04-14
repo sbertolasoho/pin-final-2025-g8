@@ -113,6 +113,7 @@ Para desplegar la infraestructura, sigue estos pasos:
 1. Inicializa la VPC:
    ```sh
    cd environments/dev
+   terraform init
    terraform apply -target=module.vpc
    ```
 
@@ -133,7 +134,11 @@ Para desplegar la infraestructura, sigue estos pasos:
    ```sh
    terraform apply
    ```
-6. Para obtener la url de Grafana y Prometheus:
+6. Actualiza la configuracion de kubectl:
+   ```sh
+   aws eks update-kubeconfig --name eks-demo-cluster --region us-east-1
+   ```
+7. Para obtener la url de Grafana y Prometheus:
    ```sh
    kubectl get svc -n monitoring
    ```
