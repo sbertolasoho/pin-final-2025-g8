@@ -8,11 +8,25 @@ module "vpc" {
   private_subnets = var.private_subnets
 }
 
+// Configurar el aws-auth para el acceso al clúster
+module "eks_aws_auth" {
+  source = "../../modules/eks/aws-auth"
+  
+  manage_aws_auth_configmap = true
+  aws_auth_users = [
+    {
+      userarn  = "arn:aws:iam::083904820942:user/sbertola"  # Reemplaza con tu ARN correcto
+      username = "sbertola"
+      groups   = ["system:masters"]
+    }
+  ]
+}
+
 // Llamada al módulo EKS (se usan las subredes privadas para el clúster)
 module "eks" {
   source          = "../../modules/eks"
   cluster_name    = var.cluster_name
-  cluster_version = "1.21"
+  cluster_version = "1.29"
   vpc_id          = module.vpc.vpc_id
 
   // Se mapea la variable desde el módulo VPC a la variable privada del clúster
@@ -36,11 +50,11 @@ provider "kubernetes" {
 }
 
 data "aws_eks_cluster" "cluster" {
-  name = module.eks.cluster_id
+  name = var.cluster_name
 }
 
 data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_id
+  name = var.cluster_name
 }
 
 // Desplegar la aplicación Nginx

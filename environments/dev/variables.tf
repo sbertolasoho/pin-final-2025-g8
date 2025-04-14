@@ -1,3 +1,19 @@
+variable "aws_auth_users" {
+  description = "Lista de usuarios de IAM para añadir al ConfigMap aws-auth"
+  type = list(object({
+    userarn  = string
+    username = string
+    groups   = list(string)
+  }))
+  default = []
+}
+
+variable "manage_aws_auth_configmap" {
+  description = "Si se debe gestionar el ConfigMap aws-auth"
+  type        = bool
+  default     = true
+}
+
 variable "aws_region" {
   description = "Región de AWS a utilizar"
   type        = string

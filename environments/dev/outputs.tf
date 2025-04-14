@@ -12,3 +12,13 @@ output "vpc_id" {
   description = "ID de la VPC"
   value       = module.vpc.vpc_id
 }
+
+output "grafana_endpoint" {
+  description = "URL de acceso a Grafana"
+  value       = module.monitoring.grafana_service_endpoint
+}
+
+output "prometheus_endpoint" {
+  description = "URL de acceso a Prometheus"
+  value       = module.monitoring.prometheus_service_endpoint
+}
