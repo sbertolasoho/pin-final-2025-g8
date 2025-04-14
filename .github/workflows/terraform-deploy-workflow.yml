@@ -80,12 +80,6 @@ jobs:
         working-directory: environments/${{ github.event.inputs.environment || 'dev' }}
         run: terraform init
         
-      - name: Download Plan Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-plan-${{ github.event.inputs.environment || 'dev' }}
-          path: environments/${{ github.event.inputs.environment || 'dev' }}
-
       # Despliegue secuencial siguiendo el orden definido en la documentación
       - name: Deploy VPC
         working-directory: environments/${{ github.event.inputs.environment || 'dev' }}
