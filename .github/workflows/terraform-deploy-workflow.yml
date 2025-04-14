@@ -7,11 +7,13 @@ on:
       - 'environments/**'
       - 'modules/**'
       - '.github/workflows/**'
+      - README.md
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'environments/**'
       - 'modules/**'
+      - README.md
   workflow_dispatch:
     inputs:
       environment:
