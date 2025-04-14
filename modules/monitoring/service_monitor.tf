@@ -25,5 +25,8 @@ resource "kubernetes_manifest" "nginx_service_monitor" {
     }
   }
 
-  depends_on = [helm_release.kube_prometheus_stack]
+    depends_on = [
+    helm_release.kube_prometheus_stack,
+    null_resource.wait_for_crds
+    ]
 }
