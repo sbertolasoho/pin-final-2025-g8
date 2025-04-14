@@ -7,11 +7,13 @@ on:
       - 'environments/**'
       - 'modules/**'
       - '.github/workflows/**'
+      - README.md
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'environments/**'
       - 'modules/**'
+      - README.md
   workflow_dispatch:
     inputs:
       environment:
@@ -52,47 +54,8 @@ jobs:
         working-directory: environments/${{ github.event.inputs.environment || 'dev' }}
         run: terraform validate
 
-  terraform-plan:
-    name: Terraform Plan
-    needs: terraform-validate
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-          
-      - name: Terraform Init
-        working-directory: environments/${{ github.event.inputs.environment || 'dev' }}
-        run: terraform init
-        
-      - name: Terraform Plan
-        working-directory: environments/${{ github.event.inputs.environment || 'dev' }}
-        run: |
-          terraform plan -out=tfplan
-          terraform show -json tfplan > tfplan.json
-        
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-plan-${{ github.event.inputs.environment || 'dev' }}
-          path: environments/${{ github.event.inputs.environment || 'dev' }}/tfplan
-          retention-days: 5
-
   terraform-apply:
     name: Terraform Apply
-    needs: terraform-plan
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     # Este job solo se ejecuta en main o cuando se dispara manualmente
@@ -118,7 +81,7 @@ jobs:
         run: terraform init
         
       - name: Download Plan Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: terraform-plan-${{ github.event.inputs.environment || 'dev' }}
           path: environments/${{ github.event.inputs.environment || 'dev' }}
@@ -151,7 +114,7 @@ jobs:
           echo "Deployment complete. Cluster endpoint: $(jq -r '.eks_cluster_endpoint.value' tf_output.json)"
         
       - name: Upload Outputs Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-outputs-${{ github.event.inputs.environment || 'dev' }}
           path: environments/${{ github.event.inputs.environment || 'dev' }}/tf_output.json
