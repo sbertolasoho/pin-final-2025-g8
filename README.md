@@ -110,78 +110,34 @@ manage_aws_auth_configmap = true
 Despliegue  
 Para desplegar la infraestructura, sigue estos pasos:
 
-1. Inicializa Terraform:
+1. Inicializa la VPC:
    ```sh
    cd environments/dev
-   terraform init
+   terraform apply -target=module.vpc
    ```
 
-2. Planifica los cambios:
+2. Inicializa el cluster de EKS:
    ```sh
-   terraform plan
+   terraform apply -target=module.eks
    ```
 
-3. Aplica la configuración:
+3. Inicializa el submodulo de Auth:
+   ```sh
+   terraform apply -target=module.eks_aws_auth
+   ```
+4. Inicializa Grafana y Prometheus
+   ```sh
+   terraform apply -target=module.monitoring.helm_release.kube_prometheus_stack -target=module.monitoring.null_resource.wait_for_crds
+   ```
+5. Instala el resto:
    ```sh
    terraform apply
    ```
+6. Para obtener la url de Grafana y Prometheus:
+   ```sh
+   kubectl get svc -n monitoring
+   ```
 
-Despliegue Por Fases (Recomendado para el Primer Despliegue)
-
-- Primero, despliega la VPC:  
-  ```sh
-  terraform apply -target=module.vpc
-  ```
-
-- Luego, despliega el clúster EKS y el módulo aws-auth:  
-  ```sh
-  terraform apply -target=module.eks
-  terraform apply -target=module.eks_aws_auth
-  ```
-
-- Configura kubectl para acceder al clúster:  
-  ```sh
-  aws eks update-kubeconfig --name <nombre-cluster> --region <region> --profile <perfil>
-  ```
-
-- Finalmente, despliega las aplicaciones:  
-  ```sh
-  terraform apply
-  ```
-
-Notas Importantes para el Acceso  
-Para permitir que otros usuarios accedan al clúster EKS, es crucial configurar correctamente el ConfigMap `aws-auth`:
-- **A través de Terraform:** Configura las variables `aws_auth_users` y `manage_aws_auth_configmap` en `terraform.tfvars`.
-- **Manualmente mediante kubectl:**  
-  ```sh
-  kubectl edit configmap aws-auth -n kube-system
-  ```
-- **Usando eksctl:**  
-  ```sh
-  eksctl create iamidentitymapping \
-      --cluster <nombre-cluster> \
-      --region <region> \
-      --arn arn:aws:iam::<account-id>:user/<username> \
-      --username <username> \
-      --group system:masters
-  ```
-
-Troubleshooting  
-Problemas de Acceso al Clúster:  
-- Verifica que el ConfigMap `aws-auth` esté correctamente configurado.
-- Asegúrate de utilizar el perfil de AWS correcto.
-- Comprueba la configuración de kubectl:
-  ```sh
-  kubectl config view --minify
-  ```
-
-Errores de Conectividad:  
-- Verifica que el endpoint del clúster sea accesible:
-  ```sh
-  curl -k <endpoint-cluster>/version
-  ```
-- Confirma si el acceso público está habilitado en el endpoint.
-- Revisa las reglas de seguridad y Network ACLs de AWS.
 
 Limpieza  
 Para eliminar todos los recursos creados:
